@@ -42,8 +42,6 @@ func main() {
 		fileServerHits: atomic.Int32{},
 	}
 
-	apiCfg.fileServerHits.Store(0)
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
