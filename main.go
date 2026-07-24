@@ -31,6 +31,12 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(body))
 }
 
+func (cfg *apiConfig) handlerResetMetrics(w http.ResponseWriter, r *http.Request) {
+	cfg.fileServerHits.Store(0)
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte("Hits were reset"))
+}
+
 func main() {
 	apiCfg := &apiConfig{
 		fileServerHits: atomic.Int32{},
@@ -46,6 +52,7 @@ func main() {
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/healthz", handlerRediness)
 	mux.HandleFunc("/metrics/", apiCfg.handlerMetrics)
+	mux.HandleFunc("/reset/", apiCfg.handlerResetMetrics)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 	log.Println("Server started on port 8080")
