@@ -1,18 +1,51 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 )
 
+func _(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
+}
+
+type apiConfig struct {
+	fileServerHits atomic.Int32
+}
+
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileServerHits.Add(1)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
+	body := fmt.Sprintf("Hits: %d", cfg.fileServerHits.Load())
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte(body))
+}
+
 func main() {
+	apiCfg := &apiConfig{
+		fileServerHits: atomic.Int32{},
+	}
+
+	apiCfg.fileServerHits.Store(0)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	})
 
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/healthz", handlerRediness)
+	mux.HandleFunc("/metrics/", apiCfg.handlerMetrics)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 	log.Println("Server started on port 8080")
