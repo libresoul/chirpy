@@ -24,7 +24,8 @@ func main() {
 	mux.Handle("/app/", fsHandler)
 
 	mux.HandleFunc("GET /api/healthz", handlerRediness)
-	mux.HandleFunc("GET /api/metrics", apiCfg.handlerMetrics)
+
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /api/reset", apiCfg.handlerResetMetrics)
 
 	server := &http.Server{
