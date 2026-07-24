@@ -1,17 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.NotFound(w, r)
-	})
+	mux.Handle("/", http.FileServer(http.Dir(".")))
 
-	server := http.Server{Addr: ":8080"}
-	fmt.Println("Server started on port 8080")
-	server.ListenAndServe()
+	server := &http.Server{Addr: ":8080", Handler: mux}
+	log.Println("Server started on port 8080")
+	log.Fatal(server.ListenAndServe())
 }
