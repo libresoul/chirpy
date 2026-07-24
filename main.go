@@ -1,21 +1,50 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/libresoul/chirpy/internal/database"
+	"github.com/pressly/goose/v3"
 )
 
 type apiConfig struct {
 	fileServerHits atomic.Int32
+	db             *database.Queries
 }
 
 func main() {
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+
+	db, _ := sql.Open("postgres", dbURL)
+	err := db.Ping()
+	if err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+
+	provider, err := goose.NewProvider(goose.DialectPostgres, db, os.DirFS("sql/migrations"))
+	if err != nil {
+		log.Fatal("Failed to create migration provider ", err)
+	}
+	_, err = provider.Up(context.Background())
+	if err != nil {
+		log.Fatal("Failed to run migrations ", err)
+	}
+
+	dbQueries := database.New(db)
 	const filepathRoot = "."
 	const port = "8000"
 
 	apiCfg := &apiConfig{
 		fileServerHits: atomic.Int32{},
+		db:             dbQueries,
 	}
 
 	mux := http.NewServeMux()
