@@ -42,8 +42,8 @@ func main() {
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/healthz", handlerRediness)
-	mux.HandleFunc("/metrics/", apiCfg.handlerMetrics)
-	mux.HandleFunc("/reset/", apiCfg.handlerResetMetrics)
+	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("/reset", apiCfg.handlerResetMetrics)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 	log.Println("Server started on port 8080")
