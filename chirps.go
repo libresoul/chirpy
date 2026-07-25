@@ -86,10 +86,28 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 }
 
 func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
-	chirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		respondWithError(w, 500, "Failed to retrieve chirps", err)
-		return
+	authorId := r.URL.Query().Get("author_id")
+	chirps := []database.Chirp{}
+	var err error
+
+	if authorId != "" {
+		uid, err := uuid.Parse(authorId)
+		if err != nil {
+			respondWithError(w, 400, "Invalid author id", nil)
+			return
+		}
+
+		chirps, err = cfg.db.GetAllChirpsByAuthor(r.Context(), uid)
+		if err != nil {
+			respondWithError(w, 500, "Failed to retrieve chirps", err)
+			return
+		}
+	} else {
+		chirps, err = cfg.db.GetAllChirps(r.Context())
+		if err != nil {
+			respondWithError(w, 500, "Failed to retrieve chirps", err)
+			return
+		}
 	}
 
 	resBody := []Chirp{}
