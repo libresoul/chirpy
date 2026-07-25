@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/libresoul/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handlerPolkaEvent(w http.ResponseWriter, r *http.Request) {
@@ -16,8 +17,18 @@ func (cfg *apiConfig) handlerPolkaEvent(w http.ResponseWriter, r *http.Request) 
 		} `json:"data"`
 	}
 
+	key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, 401, err.Error(), nil)
+		return
+	}
+	if key != cfg.polkaKey {
+		respondWithError(w, 401, "Unauthorized", nil)
+		return
+	}
+
 	params := parameters{}
-	err := json.NewDecoder(r.Body).Decode(&params)
+	err = json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, "Failed to decode parameters, invalid json", nil)
 		return
