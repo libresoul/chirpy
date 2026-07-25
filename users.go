@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -49,4 +50,19 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		Email:      user.Email,
 	}
 	respondWithJSON(w, 201, data)
+}
+
+func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("PLATFORM") != "dev" {
+		respondWithError(w, 403, "Not available on non-dev environments", nil)
+		return
+	}
+
+	err := cfg.db.DeleteAllUsers(r.Context())
+	if err != nil {
+		respondWithError(w, 500, "Failed to delete user accounts", err)
+		return
+	}
+
+	w.WriteHeader(200)
 }

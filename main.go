@@ -51,7 +51,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerResetMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
 	server := &http.Server{
 		Addr:    ":" + "8080",
