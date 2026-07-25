@@ -16,8 +16,8 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 	type resultVals struct {
 		ID         uuid.UUID `json:"id"`
-		Created_at time.Time `json:"created_at"`
-		Updated_at time.Time `json:"updated_at"`
+		Created_at string    `json:"created_at"`
+		Updated_at string    `json:"updated_at"`
 		Email      string    `json:"email"`
 	}
 
@@ -45,8 +45,8 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	data := resultVals{
 		ID:         user.ID,
-		Created_at: user.CreatedAt,
-		Updated_at: user.UpdatedAt,
+		Created_at: user.CreatedAt.Format(time.DateTime),
+		Updated_at: user.UpdatedAt.Format(time.DateTime),
 		Email:      user.Email,
 	}
 	respondWithJSON(w, 201, data)
