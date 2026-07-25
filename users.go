@@ -127,6 +127,57 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 200, resBody)
 }
 
+func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized", nil)
+		return
+	}
+
+	uid, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized", nil)
+		return
+	}
+
+	params := credentials{}
+	err = json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, 400, "Cannot decode params, invalid json", err)
+		return
+	}
+
+	if params.Email == "" || params.Password == "" {
+		respondWithError(w, 400, "email and password required", nil)
+		return
+	}
+
+	hashedPw, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, 500, "Failed to create account", err)
+	}
+
+	updateParams := database.UpdateUserParams{
+		ID:             uid,
+		Email:          params.Email,
+		HashedPassword: hashedPw,
+	}
+
+	user, err := cfg.db.UpdateUser(r.Context(), updateParams)
+	if err != nil {
+		respondWithError(w, 500, "Failed to update user info", err)
+		return
+	}
+
+	resBody := User{
+		ID:         user.ID,
+		Created_at: user.CreatedAt.Format(time.DateTime),
+		Updated_at: user.UpdatedAt.Format(time.DateTime),
+		Email:      user.Email,
+	}
+	respondWithJSON(w, 200, resBody)
+}
+
 func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	type resultVal struct {
 		Token string `json:"token"`
