@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/libresoul/chirpy/internal/auth"
+	"github.com/libresoul/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	type resultVals struct {
 		ID         uuid.UUID `json:"id"`
@@ -28,12 +31,20 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if params.Email == "" {
-		respondWithError(w, 400, "email is required", nil)
+	if params.Email == "" || params.Password == "" {
+		respondWithError(w, 400, "email and password required", nil)
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), params.Email)
+	hashedPw, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, 500, "Failed to create account", err)
+	}
+
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashedPw,
+	})
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
 			respondWithError(w, 400, "Email already exists", nil)
