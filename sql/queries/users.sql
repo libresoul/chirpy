@@ -19,3 +19,9 @@ UPDATE users
       updated_at = NOW()
 WHERE id = $3
 RETURNING *;
+
+-- name: UpgradeUserToChirpyRed :one
+UPDATE users
+  SET is_chirpy_red = TRUE
+  WHERE id = $1
+RETURNING *;

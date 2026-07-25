@@ -24,6 +24,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Token        *string   `json:"token,omitempty"`
 	RefreshToken *string   `json:"refresh_token,omitempty"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -58,10 +59,11 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	data := User{
-		ID:         user.ID,
-		Created_at: user.CreatedAt.Format(time.DateTime),
-		Updated_at: user.UpdatedAt.Format(time.DateTime),
-		Email:      user.Email,
+		ID:          user.ID,
+		Created_at:  user.CreatedAt.Format(time.DateTime),
+		Updated_at:  user.UpdatedAt.Format(time.DateTime),
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 	respondWithJSON(w, 201, data)
 }
@@ -123,6 +125,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		Email:        user.Email,
 		Token:        &jwt,
 		RefreshToken: &rt.Token,
+		IsChirpyRed:  user.IsChirpyRed,
 	}
 	respondWithJSON(w, 200, resBody)
 }
@@ -170,10 +173,11 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resBody := User{
-		ID:         user.ID,
-		Created_at: user.CreatedAt.Format(time.DateTime),
-		Updated_at: user.UpdatedAt.Format(time.DateTime),
-		Email:      user.Email,
+		ID:          user.ID,
+		Created_at:  user.CreatedAt.Format(time.DateTime),
+		Updated_at:  user.UpdatedAt.Format(time.DateTime),
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 	respondWithJSON(w, 200, resBody)
 }
