@@ -10,17 +10,18 @@ import (
 	"github.com/libresoul/chirpy/internal/database"
 )
 
+type Chirp struct {
+	ID         uuid.UUID `json:"id"`
+	Created_at string    `json:"Created_at"`
+	Updated_at string    `json:"Updated_at"`
+	Body       string    `json:"body"`
+	User_ID    uuid.UUID `json:"user_id"`
+}
+
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body    string `json:"body"`
 		User_ID string `json:"user_id"`
-	}
-	type returnVals struct {
-		ID         uuid.UUID `json:"id"`
-		Created_at string    `json:"Created_at"`
-		Updated_at string    `json:"Updated_at"`
-		Body       string    `json:"body"`
-		User_ID    uuid.UUID `json:"user_id"`
 	}
 
 	params := parameters{}
@@ -64,11 +65,32 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respondWithJSON(w, 201, returnVals{
+	respondWithJSON(w, 201, Chirp{
 		ID:         chirp.ID,
 		Created_at: chirp.CreatedAt.Format(time.DateTime),
 		Updated_at: chirp.UpdatedAt.Format(time.DateTime),
 		Body:       chirp.Body,
 		User_ID:    chirp.UserID,
 	})
+}
+
+func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
+	chirps, err := cfg.db.GetAllChirps(r.Context())
+	if err != nil {
+		respondWithError(w, 500, "Failed to retrieve chirps", err)
+		return
+	}
+
+	resBody := []Chirp{}
+	for _, c := range chirps {
+		resBody = append(resBody, Chirp{
+			ID:         c.ID,
+			Created_at: c.CreatedAt.Format(time.DateTime),
+			Updated_at: c.UpdatedAt.Format(time.DateTime),
+			Body:       c.Body,
+			User_ID:    c.UserID,
+		})
+	}
+
+	respondWithJSON(w, 200, resBody)
 }
