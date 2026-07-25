@@ -15,11 +15,19 @@ import (
 type apiConfig struct {
 	fileServerHits atomic.Int32
 	db             *database.Queries
+	jwt_secret     string
 }
 
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if dbURL == "" {
+		log.Fatal("DB_URL missing")
+	}
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET missing")
+	}
 
 	db, _ := sql.Open("postgres", dbURL)
 	err := db.Ping()
@@ -39,6 +47,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileServerHits: atomic.Int32{},
 		db:             dbQueries,
+		jwt_secret:     jwtSecret,
 	}
 
 	mux := http.NewServeMux()

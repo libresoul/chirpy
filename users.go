@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -13,8 +14,9 @@ import (
 )
 
 type credentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	TokenExpiry int    `json:"expires_in_seconds"`
 }
 
 type User struct {
@@ -22,6 +24,7 @@ type User struct {
 	Created_at string    `json:"created_at"`
 	Updated_at string    `json:"updated_at"`
 	Email      string    `json:"email"`
+	Token      *string   `json:"token,omitempty"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +68,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 }
 
 func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
-	params := credentials{}
+	params := &credentials{}
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, "Failed to decode params invlid json", nil)
@@ -94,11 +97,23 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if params.TokenExpiry == 0 || params.TokenExpiry > 3600 {
+		params.TokenExpiry = 3600
+	}
+
+	expiresIn, err := time.ParseDuration(fmt.Sprintf("%ds", params.TokenExpiry))
+
+	jwt, err := auth.MakeJWT(user.ID, cfg.jwt_secret, expiresIn)
+	if err != nil {
+		respondWithError(w, 500, "Internal Server Error", err)
+	}
+
 	resBody := User{
 		ID:         user.ID,
 		Created_at: user.CreatedAt.Format(time.DateTime),
 		Updated_at: user.UpdatedAt.Format(time.DateTime),
 		Email:      user.Email,
+		Token:      &jwt,
 	}
 	respondWithJSON(w, 200, resBody)
 }
