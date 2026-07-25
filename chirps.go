@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -87,6 +88,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
 	authorId := r.URL.Query().Get("author_id")
+	sortParam := r.URL.Query().Get("sort")
 	chirps := []database.Chirp{}
 	var err error
 
@@ -108,6 +110,18 @@ func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request
 			respondWithError(w, 500, "Failed to retrieve chirps", err)
 			return
 		}
+	}
+
+	switch sortParam {
+	case "":
+	case "asc":
+	case "desc":
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
+	default:
+		respondWithError(w, 400, "Invalid sort param, only asc and desc supported", nil)
+		return
 	}
 
 	resBody := []Chirp{}
