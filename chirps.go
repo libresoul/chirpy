@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/libresoul/chirpy/internal/auth"
 	"github.com/libresoul/chirpy/internal/database"
 )
 
@@ -20,20 +21,30 @@ type Chirp struct {
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body    string `json:"body"`
-		User_ID string `json:"user_id"`
+		Body string `json:"body"`
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized", nil)
+		return
+	}
+
+	uid, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized", err)
+		return
 	}
 
 	params := parameters{}
-	err := json.NewDecoder(r.Body).Decode(&params)
+	err = json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, "Failed to decode parameters, invalid json", nil)
 		return
 	}
 
-	uid, uid_err := uuid.Parse(params.User_ID)
-	if params.Body == "" || uid_err != nil {
-		respondWithError(w, 400, "valid body and user_id are required", nil)
+	if params.Body == "" {
+		respondWithError(w, 400, "valid body is required", nil)
 		return
 	}
 
