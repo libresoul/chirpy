@@ -15,7 +15,7 @@ import (
 type apiConfig struct {
 	fileServerHits atomic.Int32
 	db             *database.Queries
-	jwt_secret     string
+	jwtSecret      string
 }
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileServerHits: atomic.Int32{},
 		db:             dbQueries,
-		jwt_secret:     jwtSecret,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()

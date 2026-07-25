@@ -30,7 +30,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	uid, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	uid, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized", err)
 		return
@@ -143,7 +143,7 @@ func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	uid, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	uid, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized", err)
 		return

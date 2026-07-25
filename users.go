@@ -100,7 +100,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	expiresIn, err := time.ParseDuration("1h")
 
-	jwt, err := auth.MakeJWT(user.ID, cfg.jwt_secret, expiresIn)
+	jwt, err := auth.MakeJWT(user.ID, cfg.jwtSecret, expiresIn)
 	if err != nil {
 		respondWithError(w, 500, "Internal Server Error", err)
 		return
@@ -137,7 +137,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	uid, err := auth.ValidateJWT(token, cfg.jwt_secret)
+	uid, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized", nil)
 		return
@@ -210,7 +210,7 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenExpiresIn, _ := time.ParseDuration("1h")
-	jwt, err := auth.MakeJWT(uid, cfg.jwt_secret, tokenExpiresIn)
+	jwt, err := auth.MakeJWT(uid, cfg.jwtSecret, tokenExpiresIn)
 	if err != nil {
 		respondWithError(w, 500, "Internal server error", nil)
 		return
