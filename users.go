@@ -127,6 +127,45 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 200, resBody)
 }
 
+func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
+	type resultVal struct {
+		Token string `json:"token"`
+	}
+
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 400, "Refresh token not provided", nil)
+		return
+	}
+
+	existing, err := cfg.db.GetRefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized, invalid refresh token", nil)
+		return
+	}
+	if existing.RevokedAt.Valid {
+		respondWithError(w, 401, "Unauthorized, invalid refresh token", nil)
+		return
+	}
+
+	uid, err := cfg.db.GetUserFromRefreshToken(r.Context(), existing.Token)
+	if err != nil {
+		respondWithError(w, 500, "Internal server error", nil)
+		return
+	}
+
+	tokenExpiresIn, _ := time.ParseDuration("1h")
+	jwt, err := auth.MakeJWT(uid, cfg.jwt_secret, tokenExpiresIn)
+	if err != nil {
+		respondWithError(w, 500, "Internal server error", nil)
+		return
+	}
+
+	respondWithJSON(w, 200, resultVal{
+		Token: jwt,
+	})
+}
+
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("PLATFORM") != "dev" {
 		respondWithError(w, 403, "Not available on non-dev environments", nil)

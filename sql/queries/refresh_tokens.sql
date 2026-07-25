@@ -3,3 +3,12 @@ INSERT INTO refresh_tokens (
   token, user_id, expires_at
 ) VALUES ( $1, $2, $3 )
 RETURNING *;
+
+-- name: GetRefreshToken :one
+SELECT * FROM refresh_tokens
+WHERE token = $1;
+
+-- name: GetUserFromRefreshToken :one
+SELECT u.id FROM refresh_tokens
+INNER JOIN users u ON user_id = u.id
+WHERE token = $1;
