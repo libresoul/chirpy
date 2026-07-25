@@ -12,19 +12,20 @@ import (
 	"github.com/libresoul/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	type resultVals struct {
-		ID         uuid.UUID `json:"id"`
-		Created_at string    `json:"created_at"`
-		Updated_at string    `json:"updated_at"`
-		Email      string    `json:"email"`
-	}
+type credentials struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-	params := parameters{}
+type User struct {
+	ID         uuid.UUID `json:"id"`
+	Created_at string    `json:"created_at"`
+	Updated_at string    `json:"updated_at"`
+	Email      string    `json:"email"`
+}
+
+func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
+	params := credentials{}
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, "Cannot decode params, invalid json", err)
@@ -54,13 +55,52 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	data := resultVals{
+	data := User{
 		ID:         user.ID,
 		Created_at: user.CreatedAt.Format(time.DateTime),
 		Updated_at: user.UpdatedAt.Format(time.DateTime),
 		Email:      user.Email,
 	}
 	respondWithJSON(w, 201, data)
+}
+
+func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
+	params := credentials{}
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, 400, "Failed to decode params invlid json", nil)
+		return
+	}
+
+	if params.Email == "" || params.Password == "" {
+		respondWithError(w, 400, "email and password required", nil)
+		return
+	}
+
+	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
+	if err != nil {
+		respondWithError(w, 401, "Incorrect email or password", nil)
+		return
+	}
+
+	isMatched, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)
+	if err != nil {
+		respondWithError(w, 500, "Failed to look up user info", err)
+		return
+	}
+
+	if !isMatched {
+		respondWithError(w, 401, "Incorrect email or password", nil)
+		return
+	}
+
+	resBody := User{
+		ID:         user.ID,
+		Created_at: user.CreatedAt.Format(time.DateTime),
+		Updated_at: user.UpdatedAt.Format(time.DateTime),
+		Email:      user.Email,
+	}
+	respondWithJSON(w, 200, resBody)
 }
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
