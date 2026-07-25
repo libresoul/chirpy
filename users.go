@@ -166,6 +166,22 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 400, "Refresh token not provided", nil)
+		return
+	}
+
+	_, err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		respondWithError(w, 400, "Invalid refresh token", nil)
+		return
+	}
+
+	w.WriteHeader(204)
+}
+
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("PLATFORM") != "dev" {
 		respondWithError(w, 403, "Not available on non-dev environments", nil)

@@ -12,3 +12,10 @@ WHERE token = $1;
 SELECT u.id FROM refresh_tokens
 INNER JOIN users u ON user_id = u.id
 WHERE token = $1;
+
+-- name: RevokeRefreshToken :one
+UPDATE refresh_tokens
+  SET updated_at = NOW(),
+      revoked_at = NOW()
+WHERE token = $1
+RETURNING *;
