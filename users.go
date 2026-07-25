@@ -101,8 +101,20 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	jwt, err := auth.MakeJWT(user.ID, cfg.jwt_secret, expiresIn)
 	if err != nil {
 		respondWithError(w, 500, "Internal Server Error", err)
+		return
 	}
-	refreshToken := auth.MakeRefreshToken()
+
+	rtDuration, _ := time.ParseDuration("60d")
+	rtExpiresIn := time.Now().Add(rtDuration)
+
+	rt, err := cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     auth.MakeRefreshToken(),
+		UserID:    user.ID,
+		ExpiresAt: rtExpiresIn,
+	})
+	if err != nil {
+		respondWithError(w, 500, "Internal server error", err)
+	}
 
 	resBody := User{
 		ID:           user.ID,
@@ -110,7 +122,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		Updated_at:   user.UpdatedAt.Format(time.DateTime),
 		Email:        user.Email,
 		Token:        &jwt,
-		RefreshToken: &refreshToken,
+		RefreshToken: &rt.Token,
 	}
 	respondWithJSON(w, 200, resBody)
 }
